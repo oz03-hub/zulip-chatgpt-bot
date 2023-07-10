@@ -32,6 +32,17 @@ VERSION = "1.1.2"
 
 contexts = {}
 
+def token_usage(messages, model='gpt-3.5-turbo'):
+    i = num_tokens_from_messages(messages, model)
+    d = {"token-count": i}
+    if i < 100:
+        d.update({"usage": "Low"})
+    elif i >= 100 and i < 500:
+        d.update({"usage": "Medium"})
+    else:
+        d.update({"usage": "High"})
+
+    return d
 
 def num_tokens_from_messages(messages, model="gpt-3.5-turbo"):
     """Returns the number of tokens used by a list of messages."""
@@ -54,7 +65,6 @@ def num_tokens_from_messages(messages, model="gpt-3.5-turbo"):
     else:
         raise NotImplementedError(f"""num_tokens_from_messages() is not presently implemented for model {model}.
   See https://github.com/openai/openai-python/blob/main/chatml.md for information on how messages are converted to tokens.""")
-
 
 def send_reply(reply, message):
     if message['type'] == 'private':
@@ -200,6 +210,7 @@ def with_previous_messages(client, msg, messages, subcommands, token_limit, appe
 
         new_messages.insert(append_after_index, {
                             "role": role, "content": content.strip()})
+        t, u = token_usage([{"role": role, "content": content.strip()}])
         tokens = num_tokens_from_messages(messages=new_messages)
 
         if tokens > token_limit:
@@ -331,7 +342,7 @@ def handle_message(event):
     token_limit = model_tokens[model]
 
     messages = [
-        {"role": "system", "content": "You are an internal chatbot assistant in a software development company called Flexiana."},
+        {"role": "system", "content": "You are an internal chatbot assistant. Your job is to reply to prompts from users and engage in conversations. Always maintain a professional and kind tone. Keep your answers short."},
         {"role": "user", "content": f"{content}"},
     ]
 
